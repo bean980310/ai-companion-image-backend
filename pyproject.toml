@@ -1,0 +1,16 @@
+[project]
+name = "ai-companion-image-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = ["comfyui-python-client", "diffusers", "transformers", "huggingface-hub", "pandas", "torch", "torchvision", "torchaudio"]
+
+[build-system]
+requires=[
+    "setuptools>=80",
+    "setuptools-scm>=8",
+    "wheel",
+    "build",
+    "uv-build"
+]
