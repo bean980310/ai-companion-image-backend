@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, List
+from typing import Any, List, Optional
 import os
 import json
 
@@ -12,7 +12,7 @@ class BaseModelHandler(ABC):
         self.seed = int(kwargs.get('seed', 42))
         self.step = int(kwargs.get('step', 20))
         self.lora_text_weights = json.loads(str(kwargs.get("lora_text_weights_json", "")))
-        self.lora_unet_weights = json.loads(str(kwargs.get("lora_unet_weights_json", "[]")))
+        self.lora_unet_weights = json.loads(str(kwargs.get("lora_unet_weights_json", "")))
         self.vae = str(kwargs.get("vae", ""))
         self.clip_skip = int(kwargs.get("clip_skip", 2))
         self.enable_clip_skip = bool(kwargs.get("enable_clip_skip", False))
@@ -28,6 +28,10 @@ class BaseModelHandler(ABC):
 
     @abstractmethod
     def load_model(self):
+        pass
+
+    @abstractmethod
+    def generate_image(self, prompt: str, neg_prompt: Optional[str] = None, ):
         pass
 
     
