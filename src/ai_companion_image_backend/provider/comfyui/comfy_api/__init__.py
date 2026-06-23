@@ -19,7 +19,7 @@ class ComfyUIClientWrapper:
     Provides methods for image generation, uploading, and model management.
     """
 
-    def __init__(self, host: str = "127.0.0.1", port: int = 8188):
+    def __init__(self, url="localhost:8188"):
         """
         Initialize the ComfyUI client wrapper.
 
@@ -27,9 +27,8 @@ class ComfyUIClientWrapper:
             host: ComfyUI server host address
             port: ComfyUI server port
         """
-        self.host = host
-        self.port = port
-        self._comfy = ComfyUI(host=host, port=port)
+        self._server_url = url
+        self._comfy = ComfyUI(server_url=self._server_url)
         self._client = self._comfy.client
 
     @property
@@ -40,7 +39,7 @@ class ComfyUIClientWrapper:
     @property
     def server_address(self) -> str:
         """Get the server address."""
-        return f"{self.host}:{self.port}"
+        return self._server_url
 
     def queue_prompt(self, prompt: Dict[str, Any]) -> Dict[str, Any]:
         """

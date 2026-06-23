@@ -21,7 +21,7 @@ from ..comfyui_workflows import (
     load_txt2img_sdxl_with_refiner_workflow_clip_skip
 )
 
-from src import logger
+from ai_companion_core import logger
 
 class Txt2ImgPipeline:
     """Text-to-Image generation pipeline using ComfyUI."""

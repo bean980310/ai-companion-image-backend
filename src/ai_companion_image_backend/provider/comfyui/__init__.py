@@ -14,7 +14,7 @@ from PIL import Image, ImageFile
 from .comfy_api import ComfyUIClientWrapper
 from .comfyui_tasks import Txt2ImgPipeline, Img2ImgPipeline, InpaintPipeline
 
-from src import logger
+from ai_companion_core import logger
 
 
 class GenerationMode(Enum):
@@ -68,8 +68,7 @@ class ComfyUIProvider:
         refiner: str = None,
         loras: List[str] = None,
         vae: str = None,
-        host: str = "127.0.0.1",
-        port: int = 8188
+        server_url: str = "localhost:8188"
     ):
         """
         Initialize the ComfyUI provider.
@@ -88,8 +87,7 @@ class ComfyUIProvider:
         self.refiner = refiner
         self.loras = loras or []
         self.vae = vae
-        self.host = host
-        self.port = port
+        self.server_url = server_url
 
         # Lazy-initialized pipelines
         self._txt2img: Optional[Txt2ImgPipeline] = None
@@ -103,7 +101,7 @@ class ComfyUIProvider:
     def client(self) -> ComfyUIClientWrapper:
         """Get or create the ComfyUI client."""
         if self._client is None:
-            self._client = ComfyUIClientWrapper(host=self.host, port=self.port)
+            self._client = ComfyUIClientWrapper()
         return self._client
 
     @property
@@ -249,8 +247,7 @@ def create_provider(
     refiner: str = None,
     loras: List[str] = None,
     vae: str = None,
-    host: str = "127.0.0.1",
-    port: int = 8188
+    server_url: str = "localhost:8188"
 ) -> ComfyUIProvider:
     """
     Create a ComfyUI provider instance.
@@ -273,8 +270,7 @@ def create_provider(
         refiner=refiner,
         loras=loras,
         vae=vae,
-        host=host,
-        port=port
+        server_url=server_url
     )
 
 

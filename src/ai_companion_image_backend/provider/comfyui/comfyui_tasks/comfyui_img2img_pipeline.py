@@ -21,7 +21,7 @@ from ..comfyui_workflows import (
     load_img2img_sdxl_with_refiner_workflow_clip_skip
 )
 
-from src import logger
+from ai_companion_core import logger
 
 
 class Img2ImgPipeline:
