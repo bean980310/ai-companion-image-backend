@@ -1,6 +1,6 @@
 [project]
 name = "ai-companion-image-backend"
-version = "0.1.2"
+version = "0.1.3"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
@@ -13,4 +13,11 @@ requires=[
     "wheel",
     "build",
     "uv-build"
+]
+
+
+[project.optional-dependencies]
+mlx = [
+    "mlx",
+    "mlx-vlm"
 ]
