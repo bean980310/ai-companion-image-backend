@@ -1,16 +1,15 @@
 from abc import ABC, abstractmethod
-from functools import partial
-from typing import Any, List, Optional
-import os
+from typing import List, Optional
 import json
 
+
 class BaseModelHandler(ABC):
-    def __init__(self, model_id: str, model_type: str, lora_weights: List[str] = None, **kwargs):
+    def __init__(self, model_id: str, model_type: str, lora_weights: Optional[List[str]] = None, **kwargs):
         self.model_id = model_id
         self.model_type = model_type
         self.lora_weights = lora_weights
-        self.seed = int(kwargs.get('seed', 42))
-        self.step = int(kwargs.get('step', 20))
+        self.seed = int(kwargs.get("seed", 42))
+        self.step = int(kwargs.get("step", 20))
         self.lora_text_weights = json.loads(str(kwargs.get("lora_text_weights_json", "")))
         self.lora_unet_weights = json.loads(str(kwargs.get("lora_unet_weights_json", "")))
         self.vae = str(kwargs.get("vae", ""))
@@ -31,7 +30,9 @@ class BaseModelHandler(ABC):
         pass
 
     @abstractmethod
-    def generate_image(self, prompt: str, neg_prompt: Optional[str] = None, ):
+    def generate_image(
+        self,
+        prompt: str,
+        neg_prompt: Optional[str] = None,
+    ):
         pass
-
-    

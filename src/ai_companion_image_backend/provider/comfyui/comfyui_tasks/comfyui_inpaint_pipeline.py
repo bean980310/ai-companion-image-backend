@@ -12,14 +12,7 @@ import pandas as pd
 from PIL import Image, ImageFile
 
 from ..comfy_api import ComfyUIClientWrapper
-from ..comfyui_workflows import (
-    load_inpaint_workflow,
-    load_inpaint_sdxl_workflow,
-    load_inpaint_sdxl_with_refiner_workflow,
-    load_inpaint_workflow_clip_skip,
-    load_inpaint_sdxl_workflow_clip_skip,
-    load_inpaint_sdxl_with_refiner_workflow_clip_skip
-)
+from ..comfyui_workflows import load_inpaint_workflow, load_inpaint_sdxl_workflow, load_inpaint_sdxl_with_refiner_workflow, load_inpaint_workflow_clip_skip, load_inpaint_sdxl_workflow_clip_skip, load_inpaint_sdxl_with_refiner_workflow_clip_skip
 
 from ai_companion_core import logger
 
@@ -27,14 +20,7 @@ from ai_companion_core import logger
 class InpaintPipeline:
     """Inpainting generation pipeline using ComfyUI."""
 
-    def __init__(
-        self,
-        model: str,
-        model_type: str = "checkpoint",
-        refiner: str = None,
-        loras: List[str] = None,
-        vae: str = None
-    ):
+    def __init__(self, model: str, model_type: str = "checkpoint", refiner: Optional[str] = None, loras: Optional[List[str]] = None, vae: Optional[str] = None):
         self.client = ComfyUIClientWrapper()
         self.model = model
         self.model_type = model_type
@@ -47,60 +33,30 @@ class InpaintPipeline:
             return random.randint(0, 9007199254740991)
         return seed
 
-    def _apply_loras(
-        self,
-        prompt: Dict[str, Any],
-        lora_text_weights: List[float],
-        lora_unet_weights: List[float],
-        base_node: str,
-        start_node_id: int
-    ) -> Tuple[str, int]:
+    def _apply_loras(self, prompt: Dict[str, Any], lora_text_weights: List[float], lora_unet_weights: List[float], base_node: str, start_node_id: int) -> Tuple[str, int]:
         current_node_id = start_node_id
 
         for i, lora in enumerate(self.loras):
             text_weight = lora_text_weights[i] if i < len(lora_text_weights) else 1.0
             unet_weight = lora_unet_weights[i] if i < len(lora_unet_weights) else 1.0
             new_node_id = str(current_node_id)
-            prompt[new_node_id] = {
-                "class_type": "LoraLoader",
-                "inputs": {
-                    "lora_name": lora,
-                    "strength_model": text_weight,
-                    "strength_clip": unet_weight,
-                    "model": [base_node, 0],
-                    "clip": [base_node, 1]
-                }
-            }
+            prompt[new_node_id] = {"class_type": "LoraLoader", "inputs": {"lora_name": lora, "strength_model": text_weight, "strength_clip": unet_weight, "model": [base_node, 0], "clip": [base_node, 1]}}
             base_node = new_node_id
             current_node_id += 1
 
         return base_node, current_node_id
 
-    def _apply_vae(
-        self,
-        prompt: Dict[str, Any],
-        current_node_id: int,
-        vae_target_node: str = "8"
-    ) -> int:
+    def _apply_vae(self, prompt: Dict[str, Any], current_node_id: int, vae_target_node: str = "8") -> int:
         if self.vae == "Default":
             return current_node_id
 
         vae_value = self.vae
         new_node_id = str(current_node_id)
-        prompt[new_node_id] = {
-            "class_type": "VAELoader",
-            "inputs": {
-                "vae_name": vae_value
-            }
-        }
+        prompt[new_node_id] = {"class_type": "VAELoader", "inputs": {"vae_name": vae_value}}
         prompt[vae_target_node]["inputs"]["vae"] = [new_node_id, 0]
         return current_node_id + 1
 
-    def _process_results(
-        self,
-        generated: Dict[str, Any],
-        history_data: Dict[str, Any]
-    ) -> Tuple[List[Image.Image], pd.DataFrame]:
+    def _process_results(self, generated: Dict[str, Any], history_data: Dict[str, Any]) -> Tuple[List[Image.Image], pd.DataFrame]:
         output_images = []
         width = history_data.get("Width", 0)
         height = history_data.get("Height", 0)
@@ -141,7 +97,7 @@ class InpaintPipeline:
         seed: int,
         random_seed: bool,
         lora_text_weights_json: str,
-        lora_unet_weights_json: str
+        lora_unet_weights_json: str,
     ) -> Tuple[List[Image.Image], Optional[pd.DataFrame]]:
         """
         Generate images using inpainting workflow.
@@ -225,10 +181,7 @@ class InpaintPipeline:
             base_node = "4"
             current_node_id = 16 if enable_clip_skip else 15
 
-            base_node, current_node_id = self._apply_loras(
-                prompt, lora_text_weights, lora_unet_weights,
-                base_node, current_node_id
-            )
+            base_node, current_node_id = self._apply_loras(prompt, lora_text_weights, lora_unet_weights, base_node, current_node_id)
 
             prompt["3"]["inputs"]["model"] = [base_node, 0]
             if enable_clip_skip:
@@ -243,18 +196,7 @@ class InpaintPipeline:
             # Generate
             generated = self.client.image2image_generate(prompt)
 
-            history_data = {
-                "Positive Prompt": positive_prompt,
-                "Negative Prompt": negative_prompt,
-                "Generation Steps": generation_step,
-                "Model": self.model,
-                "Sampler": sampler,
-                "Scheduler": scheduler,
-                "CFG Scale": cfg_scale,
-                "Seed": seed,
-                "Width": 0,
-                "Height": 0
-            }
+            history_data = {"Positive Prompt": positive_prompt, "Negative Prompt": negative_prompt, "Generation Steps": generation_step, "Model": self.model, "Sampler": sampler, "Scheduler": scheduler, "CFG Scale": cfg_scale, "Seed": seed, "Width": 0, "Height": 0}
 
             return self._process_results(generated, history_data)
 
@@ -284,7 +226,7 @@ class InpaintPipeline:
         seed: int,
         random_seed: bool,
         lora_text_weights_json: str,
-        lora_unet_weights_json: str
+        lora_unet_weights_json: str,
     ) -> Tuple[List[Image.Image], Optional[pd.DataFrame]]:
         """
         Generate images using inpainting workflow with refiner.
@@ -348,10 +290,7 @@ class InpaintPipeline:
             base_node = "4"
             current_node_id = 20 if enable_clip_skip else 19
 
-            base_node, current_node_id = self._apply_loras(
-                prompt, lora_text_weights, lora_unet_weights,
-                base_node, current_node_id
-            )
+            base_node, current_node_id = self._apply_loras(prompt, lora_text_weights, lora_unet_weights, base_node, current_node_id)
 
             prompt["3"]["inputs"]["model"] = [base_node, 0]
             if enable_clip_skip:
@@ -366,18 +305,7 @@ class InpaintPipeline:
             # Generate
             generated = self.client.image2image_generate(prompt)
 
-            history_data = {
-                "Positive Prompt": positive_prompt,
-                "Negative Prompt": negative_prompt,
-                "Generation Steps": generation_step,
-                "Model": self.model,
-                "Sampler": sampler,
-                "Scheduler": scheduler,
-                "CFG Scale": cfg_scale,
-                "Seed": seed,
-                "Width": 0,
-                "Height": 0
-            }
+            history_data = {"Positive Prompt": positive_prompt, "Negative Prompt": negative_prompt, "Generation Steps": generation_step, "Model": self.model, "Sampler": sampler, "Scheduler": scheduler, "CFG Scale": cfg_scale, "Seed": seed, "Width": 0, "Height": 0}
 
             return self._process_results(generated, history_data)
 
@@ -410,15 +338,10 @@ def generate_images_inpaint(
     blur_radius: float,
     blur_expansion_radius: int,
     lora_text_weights_json: str,
-    lora_unet_weights_json: str
+    lora_unet_weights_json: str,
 ) -> Tuple[List[Image.Image], Optional[pd.DataFrame]]:
     """Backward compatible function for inpainting generation."""
-    pipeline = InpaintPipeline(
-        model=diffusion_model,
-        model_type=diffusion_model_type,
-        loras=loras,
-        vae=vae
-    )
+    pipeline = InpaintPipeline(model=diffusion_model, model_type=diffusion_model_type, loras=loras, vae=vae)
     return pipeline.generate(
         positive_prompt=positive_prompt,
         negative_prompt=negative_prompt,
@@ -428,6 +351,7 @@ def generate_images_inpaint(
         denoise_strength=denoise_strength,
         blur_radius=blur_radius,
         blur_expansion_radius=blur_expansion_radius,
+        vae=vae,
         clip_skip=clip_skip,
         enable_clip_skip=enable_clip_skip,
         clip_g=clip_g,
@@ -438,7 +362,7 @@ def generate_images_inpaint(
         seed=seed,
         random_seed=random_seed,
         lora_text_weights_json=lora_text_weights_json,
-        lora_unet_weights_json=lora_unet_weights_json
+        lora_unet_weights_json=lora_unet_weights_json,
     )
 
 
@@ -468,16 +392,10 @@ def generate_images_inpaint_with_refiner(
     blur_radius: float,
     blur_expansion_radius: int,
     lora_text_weights_json: str,
-    lora_unet_weights_json: str
+    lora_unet_weights_json: str,
 ) -> Tuple[List[Image.Image], Optional[pd.DataFrame]]:
     """Backward compatible function for inpainting generation with refiner."""
-    pipeline = InpaintPipeline(
-        model=diffusion_model,
-        model_type=diffusion_model_type,
-        refiner=diffusion_refiner_model,
-        loras=loras,
-        vae=vae
-    )
+    pipeline = InpaintPipeline(model=diffusion_model, model_type=diffusion_model_type, refiner=diffusion_refiner_model, loras=loras, vae=vae)
     return pipeline.generate_with_refiner(
         positive_prompt=positive_prompt,
         negative_prompt=negative_prompt,
@@ -489,6 +407,7 @@ def generate_images_inpaint_with_refiner(
         denoise_strength=denoise_strength,
         blur_radius=blur_radius,
         blur_expansion_radius=blur_expansion_radius,
+        vae=vae,
         clip_skip=clip_skip,
         enable_clip_skip=enable_clip_skip,
         sampler=sampler,
@@ -498,5 +417,5 @@ def generate_images_inpaint_with_refiner(
         seed=seed,
         random_seed=random_seed,
         lora_text_weights_json=lora_text_weights_json,
-        lora_unet_weights_json=lora_unet_weights_json
+        lora_unet_weights_json=lora_unet_weights_json,
     )
