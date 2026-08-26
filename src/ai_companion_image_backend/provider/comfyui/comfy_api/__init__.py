@@ -10,7 +10,8 @@ from typing import Union, Dict, Any, List, Optional
 
 from PIL import Image, ImageOps
 
-from comfy_sdk import ComfyUI
+from comfy_client import ComfyUI
+from comfy_sdk import Comfy
 
 
 class ComfyUIClientWrapper:
@@ -19,7 +20,7 @@ class ComfyUIClientWrapper:
     Provides methods for image generation, uploading, and model management.
     """
 
-    def __init__(self, url="localhost:8188"):
+    def __init__(self, url="localhost:8189"):
         """
         Initialize the ComfyUI client wrapper.
 
@@ -29,12 +30,12 @@ class ComfyUIClientWrapper:
         """
         self._server_url = url
         self._comfy = ComfyUI(server_url=self._server_url)
-        self._client = self._comfy.client
+        # self._client = Comfy(base_url=self._server_url)
 
     @property
     def client_id(self) -> str:
         """Get the client ID for WebSocket connections."""
-        return self._client.client_id
+        return self._comfy.client.client_id
 
     @property
     def server_address(self) -> str:
@@ -52,11 +53,7 @@ class ComfyUIClientWrapper:
             Response containing prompt_id and other metadata
         """
         response = self._comfy.prompt.send(prompt)
-        return {
-            "prompt_id": response.prompt_id,
-            "number": response.number,
-            "node_errors": response.node_errors
-        }
+        return {"prompt_id": response.prompt_id, "number": response.number, "node_errors": response.node_errors}
 
     def get_image(self, filename: str, subfolder: str = "", folder_type: str = "output") -> bytes:
         """
@@ -84,12 +81,7 @@ class ComfyUIClientWrapper:
         """
         return self._comfy.prompt.retrieve(prompt_id)
 
-    def generate_images(
-        self,
-        prompt: Dict[str, Any],
-        output_dir: str = "outputs",
-        save_to_disk: bool = True
-    ) -> Dict[str, List[bytes]]:
+    def generate_images(self, prompt: Dict[str, Any], output_dir: str = "outputs", save_to_disk: bool = True) -> Dict[str, List[bytes]]:
         """
         Generate images from a workflow prompt.
 
@@ -121,11 +113,7 @@ class ComfyUIClientWrapper:
 
             if "images" in node_output:
                 for image_info in node_output["images"]:
-                    image_data = self.get_image(
-                        image_info["filename"],
-                        image_info.get("subfolder", ""),
-                        image_info.get("type", "output")
-                    )
+                    image_data = self.get_image(image_info["filename"], image_info.get("subfolder", ""), image_info.get("type", "output"))
                     images_output.append(image_data)
 
                     if save_to_disk:
@@ -141,12 +129,7 @@ class ComfyUIClientWrapper:
 
         return output_images
 
-    def upload_image(
-        self,
-        input_img: Union[str, Image.Image, None],
-        subfolder: str = "",
-        overwrite: bool = False
-    ) -> Optional[str]:
+    def upload_image(self, input_img: Union[str, Image.Image, None], subfolder: str = "", overwrite: bool = False) -> Optional[str]:
         """
         Upload an image to ComfyUI input folder.
 
@@ -182,13 +165,7 @@ class ComfyUIClientWrapper:
             print(f"Error uploading image: {e}")
             return None
 
-    def upload_mask(
-        self,
-        original_img: Union[str, Image.Image],
-        mask_img: Dict[str, Any],
-        subfolder: str = "clipspace",
-        overwrite: bool = False
-    ) -> Optional[str]:
+    def upload_mask(self, original_img: Union[str, Image.Image], mask_img: Dict[str, Any], subfolder: str = "clipspace", overwrite: bool = False) -> Optional[str]:
         """
         Upload a mask image for inpainting.
 
@@ -206,10 +183,10 @@ class ComfyUIClientWrapper:
         else:
             original_file_name = f"original_{datetime.datetime.now().strftime('%y%m%d_%H%M%S')}.png"
 
-        with Image.open(mask_img['layers'][0]) as mask_pil:
-            mask_temp = mask_pil.getchannel('A')
+        with Image.open(mask_img["layers"][0]) as mask_pil:
+            mask_temp = mask_pil.getchannel("A")
             new_alpha = ImageOps.invert(mask_temp)
-            new_mask = Image.new('L', mask_pil.size)
+            new_mask = Image.new("L", mask_pil.size)
             new_mask.putalpha(new_alpha)
 
             buffer = BytesIO()
@@ -219,20 +196,10 @@ class ComfyUIClientWrapper:
         suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
         new_file_name = f"clipspace-mask_{suffix}.png"
 
-        original_ref = {
-            "filename": original_file_name,
-            "subfolder": "",
-            "type": "input"
-        }
+        original_ref = {"filename": original_file_name, "subfolder": "", "type": "input"}
 
         try:
-            result = self._comfy.images.upload_mask(
-                file_data,
-                new_file_name,
-                original_ref,
-                overwrite,
-                "input"
-            )
+            result = self._comfy.images.upload_mask(file_data, new_file_name, original_ref, overwrite, "input")
             mask_name = result.get("name", new_file_name)
             print(f"inpaint upload: {mask_name}")
             return mask_name

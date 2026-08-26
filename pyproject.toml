@@ -1,10 +1,10 @@
 [project]
 name = "ai-companion-image-backend"
-version = "0.1.3"
+version = "0.1.6"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
-dependencies = ["ai-companion-core", "comfyui-python-client", "diffusers", "transformers", "huggingface-hub", "pandas", "torch", "torchvision", "torchaudio", "openai", "google-genai", "xai-sdk", "replicate", "together"]
+dependencies = ["ai-companion-core", "comfy-sdk", "comfyui-python-client", "diffusers", "transformers", "huggingface-hub", "pandas", "torch", "torchvision", "torchaudio", "openai", "google-genai", "xai-sdk", "replicate", "together"]
 
 [build-system]
 requires=[
